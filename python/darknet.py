@@ -1,6 +1,7 @@
 from ctypes import *
 import math
 import random
+import time
 
 def sample(probs):
     s = sum(probs)
@@ -122,7 +123,7 @@ def classify(net, meta, im):
     res = sorted(res, key=lambda x: -x[1])
     return res
 
-def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
+def detect(net, meta, image, thresh=.1, hier_thresh=.1, nms=.45):
     im = load_image(image, 0, 0)
     num = c_int(0)
     pnum = pointer(num)
@@ -143,14 +144,12 @@ def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     return res
     
 if __name__ == "__main__":
-    #net = load_net("cfg/densenet201.cfg", "/home/pjreddie/trained/densenet201.weights", 0)
-    #im = load_image("data/wolf.jpg", 0, 0)
-    #meta = load_meta("cfg/imagenet1k.data")
-    #r = classify(net, meta, im)
-    #print r[:10]
-    net = load_net("cfg/tiny-yolo.cfg", "tiny-yolo.weights", 0)
+    net = load_net("cfg/yolov3.cfg", "yolov3.weights", 0)
     meta = load_meta("cfg/coco.data")
-    r = detect(net, meta, "data/dog.jpg")
-    print r
-    
 
+    now = time.time()
+    r = detect(net, meta, "data/dog.jpg")
+    duration = time.time() - now
+
+    print(duration)
+    print(r)

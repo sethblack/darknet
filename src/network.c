@@ -195,6 +195,9 @@ void forward_network(network *netp)
 #endif
     network net = *netp;
     int i;
+
+    /*fprintf(stdout, "looping over %d layers\n", net.n);*/
+
     for(i = 0; i < net.n; ++i){
         net.index = i;
         layer l = net.layers[i];
@@ -207,6 +210,7 @@ void forward_network(network *netp)
             net.truth = l.output;
         }
     }
+
     calc_network_cost(netp);
 }
 
@@ -579,9 +583,13 @@ void free_detections(detection *dets, int n)
 float *network_predict_image(network *net, image im)
 {
     image imr = letterbox_image(im, net->w, net->h);
+    //fprintf(stdout, "net->w: %d, net->h: %d\n", net->w, net->h);
     set_batch_network(net, 1);
+    //fprintf(stdout, "set_batch_network done\n");
     float *p = network_predict(net, imr.data);
+    //fprintf(stdout, "network_predict done\n");
     free_image(imr);
+    //fprintf(stdout, "free_image done\n");
     return p;
 }
 

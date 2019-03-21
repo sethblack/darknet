@@ -3,6 +3,7 @@ CUDNN=0
 OPENCV=0
 OPENMP=0
 DEBUG=0
+NUMPY=1
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -25,7 +26,7 @@ NVCC=nvcc
 AR=ar
 ARFLAGS=rcs
 OPTS=-Ofast
-LDFLAGS= -lm -pthread 
+LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -Isrc/
 CFLAGS=-Wall -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
@@ -44,6 +45,11 @@ COMMON+= -DOPENCV
 CFLAGS+= -DOPENCV
 LDFLAGS+= `pkg-config --libs opencv` -lstdc++
 COMMON+= `pkg-config --cflags opencv` 
+endif
+
+ifeq ($(NUMPY), 1) 
+COMMON+= -DNUMPY -Iinclude/python/ -Iinclude/numpy/
+CFLAGS+= -DNUMPY
 endif
 
 ifeq ($(GPU), 1) 
