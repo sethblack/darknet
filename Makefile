@@ -20,8 +20,10 @@ ALIB=libdarknet.a
 EXEC=darknet
 OBJDIR=./obj/
 
-CC=gcc
-CPP=g++
+# CC=gcc
+# CPP=g++
+CC=armv8-rpi3-linux-gnueabihf-gcc
+CPP=armv8-rpi3-linux-gnueabihf-g++
 NVCC=nvcc 
 AR=ar
 ARFLAGS=rcs
