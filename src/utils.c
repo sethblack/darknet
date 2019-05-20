@@ -86,7 +86,7 @@ void shuffle(void *arr, size_t n, size_t size)
 {
     size_t i;
     void *swp = calloc(1, size);
-    for(i = 0; i < n-1; ++i){
+    for(i = 0; i < n-1; ++i) {
         size_t j = i + rand()/(RAND_MAX / (n-i)+1);
         memcpy(swp,          arr+(j*size), size);
         memcpy(arr+(j*size), arr+(i*size), size);
@@ -96,16 +96,16 @@ void shuffle(void *arr, size_t n, size_t size)
 
 int *random_index_order(int min, int max)
 {
-    int *inds = calloc(max-min, sizeof(int));
+    int *inds = calloc(max - min, sizeof(int));
     int i;
     for(i = min; i < max; ++i){
-        inds[i] = i;
+        inds[i-min] = i;
     }
     for(i = min; i < max-1; ++i){
-        int swap = inds[i];
-        int index = i + rand()%(max-i);
-        inds[i] = inds[index];
-        inds[index] = swap;
+        int swap = inds[i-min];
+        int index = i + rand() % (max-i);
+        inds[i-min] = inds[index-min];
+        inds[index-min] = swap;
     }
     return inds;
 }
