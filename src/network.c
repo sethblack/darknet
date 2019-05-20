@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
 #include <assert.h>
@@ -582,13 +583,15 @@ void free_detections(detection *dets, int n)
 
 float *network_predict_image(network *net, image im)
 {
-    image imr = letterbox_image(im, net->w, net->h);
+    bool resize = im.w != net->w || im.h != net->h;
+    image imr = resize ? letterbox_image(im, net->w, net->h) : im;
     //fprintf(stdout, "net->w: %d, net->h: %d\n", net->w, net->h);
     set_batch_network(net, 1);
     //fprintf(stdout, "set_batch_network done\n");
     float *p = network_predict(net, imr.data);
     //fprintf(stdout, "network_predict done\n");
-    free_image(imr);
+    if(resize)
+        free_image(imr);
     //fprintf(stdout, "free_image done\n");
     return p;
 }
