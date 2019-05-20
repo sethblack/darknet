@@ -496,7 +496,7 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
     list *plist = get_paths("data/coco_val_5k.list");
     char **paths = (char **)list_to_array(plist);
 
-    layer l = net->layers[net->n-1];
+    // layer l = net->layers[net->n-1];
 
     int j, k;
 
