@@ -269,7 +269,7 @@ struct layer{
     float *z_cpu;
     float *r_cpu;
     float *h_cpu;
-    float * prev_state_cpu;
+    float *prev_state_cpu;
 
     float *temp_cpu;
     float *temp2_cpu;
@@ -286,7 +286,7 @@ struct layer{
     float *c_cpu;
     float *dc_cpu; 
 
-    float * binary_input;
+    float *binary_input;
 
     struct layer *input_layer;
     struct layer *self_layer;

@@ -2,23 +2,25 @@
 
 static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,67,70,72,73,74,75,76,77,78,79,80,81,82,84,85,86,87,88,89,90};
 
-
-void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear)
-{
+void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear) {
     list *options = read_data_cfg(datacfg);
-    char *train_images = option_find_str(options, "train", "data/train.list");
+    char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "/backup/");
 
     srand(time(0));
+
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
+
     float avg_loss = -1;
     network **nets = calloc(ngpus, sizeof(network*));
 
     srand(time(0));
+
     int seed = rand();
     int i;
-    for(i = 0; i < ngpus; ++i){
+
+    for(i = 0; i < ngpus; ++i) {
         srand(seed);
 #ifdef GPU
         cuda_set_device(gpus[i]);
@@ -26,6 +28,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         nets[i] = load_network(cfgfile, weightfile, clear);
         nets[i]->learning_rate *= ngpus;
     }
+
     srand(time(0));
     network *net = nets[0];
 
@@ -39,7 +42,6 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     float jitter = l.jitter;
 
     list *plist = get_paths(train_images);
-    //int N = plist->size;
     char **paths = (char **)list_to_array(plist);
 
     load_args args = get_base_args(net);
@@ -56,16 +58,17 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     args.threads = 64;
 
     pthread_t load_thread = load_data(args);
-    double time;
+    double time = 0;
     int count = 0;
-    //while(i*imgs < N*120){
+
     while(get_current_batch(net) < net->max_batches){
-        if(l.random && count++%10 == 0){
+        if(l.random && count++ % 10 == 0){
             printf("Resizing\n");
             int dim = (rand() % 10 + 10) * 32;
+
             if (get_current_batch(net)+200 > net->max_batches) dim = 608;
-            //int dim = (rand() % 4 + 16) * 32;
             printf("%d\n", dim);
+
             args.w = dim;
             args.h = dim;
 
@@ -75,46 +78,27 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             load_thread = load_data(args);
 
             #pragma omp parallel for
-            for(i = 0; i < ngpus; ++i){
+            for(i = 0; i < ngpus; ++i) {
                 resize_network(nets[i], dim, dim);
             }
+
             net = nets[0];
         }
-        time=what_time_is_it_now();
+
+        time = what_time_is_it_now();
+
         pthread_join(load_thread, 0);
+
         train = buffer;
         load_thread = load_data(args);
 
-        /*
-           int k;
-           for(k = 0; k < l.max_boxes; ++k){
-           box b = float_to_box(train.y.vals[10] + 1 + k*5);
-           if(!b.x) break;
-           printf("loaded: %f %f %f %f\n", b.x, b.y, b.w, b.h);
-           }
-         */
-        /*
-           int zz;
-           for(zz = 0; zz < train.X.cols; ++zz){
-           image im = float_to_image(net->w, net->h, 3, train.X.vals[zz]);
-           int k;
-           for(k = 0; k < l.max_boxes; ++k){
-           box b = float_to_box(train.y.vals[zz] + k*5, 1);
-           printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
-           draw_bbox(im, b, 1, 1,0,0);
-           }
-           show_image(im, "truth11");
-           cvWaitKey(0);
-           save_image(im, "truth11");
-           }
-         */
+        printf("Loaded: %lf seconds\n", what_time_is_it_now() - time);
 
-        printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
-
-        time=what_time_is_it_now();
+        time = what_time_is_it_now();
         float loss = 0;
+
 #ifdef GPU
-        if(ngpus == 1){
+        if(ngpus == 1) {
             loss = train_network(net, train);
         } else {
             loss = train_networks(nets, ngpus, train, 4);
@@ -122,12 +106,15 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 #else
         loss = train_network(net, train);
 #endif
+
         if (avg_loss < 0) avg_loss = loss;
-        avg_loss = avg_loss*.9 + loss*.1;
+        avg_loss = (avg_loss * .9) + (loss * .1);
 
         i = get_current_batch(net);
+
         printf("%ld: %f, %f avg, %f rate, %lf seconds, %d images\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), what_time_is_it_now()-time, i*imgs);
-        if(i%100==0){
+
+        if(i % 100 == 0) {
 #ifdef GPU
             if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
@@ -135,7 +122,8 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             sprintf(buff, "%s/%s.backup", backup_directory, base);
             save_weights(net, buff);
         }
-        if(i%10000==0 || (i < 1000 && i%100 == 0)){
+
+        if(i % 10000 == 0 || (i < 1000 && i % 100 == 0)) {
 #ifdef GPU
             if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
@@ -143,27 +131,27 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
             save_weights(net, buff);
         }
+
         free_data(train);
     }
+
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
+
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
 }
 
-
-static int get_coco_image_id(char *filename)
-{
+static int get_coco_image_id(char *filename) {
     char *p = strrchr(filename, '/');
     char *c = strrchr(filename, '_');
     if(c) p = c;
     return atoi(p+1);
 }
 
-static void print_cocos(FILE *fp, char *image_path, detection *dets, int num_boxes, int classes, int w, int h)
-{
+static void print_cocos(FILE *fp, char *image_path, detection *dets, int num_boxes, int classes, int w, int h) {
     int i, j;
     int image_id = get_coco_image_id(image_path);
     for(i = 0; i < num_boxes; ++i){
@@ -188,10 +176,9 @@ static void print_cocos(FILE *fp, char *image_path, detection *dets, int num_box
     }
 }
 
-void print_detector_detections(FILE **fps, char *id, detection *dets, int total, int classes, int w, int h)
-{
+void print_detector_detections(FILE **fps, char *id, detection *dets, int total, int classes, int w, int h) {
     int i, j;
-    for(i = 0; i < total; ++i){
+    for(i = 0; i < total; ++i) {
         float xmin = dets[i].bbox.x - dets[i].bbox.w/2. + 1;
         float xmax = dets[i].bbox.x + dets[i].bbox.w/2. + 1;
         float ymin = dets[i].bbox.y - dets[i].bbox.h/2. + 1;
@@ -202,15 +189,14 @@ void print_detector_detections(FILE **fps, char *id, detection *dets, int total,
         if (xmax > w) xmax = w;
         if (ymax > h) ymax = h;
 
-        for(j = 0; j < classes; ++j){
+        for(j = 0; j < classes; ++j) {
             if (dets[i].prob[j]) fprintf(fps[j], "%s %f %f %f %f %f\n", id, dets[i].prob[j],
                     xmin, ymin, xmax, ymax);
         }
     }
 }
 
-void print_imagenet_detections(FILE *fp, int id, detection *dets, int total, int classes, int w, int h)
-{
+void print_imagenet_detections(FILE *fp, int id, detection *dets, int total, int classes, int w, int h) {
     int i, j;
     for(i = 0; i < total; ++i){
         float xmin = dets[i].bbox.x - dets[i].bbox.w/2.;
@@ -223,7 +209,7 @@ void print_imagenet_detections(FILE *fp, int id, detection *dets, int total, int
         if (xmax > w) xmax = w;
         if (ymax > h) ymax = h;
 
-        for(j = 0; j < classes; ++j){
+        for(j = 0; j < classes; ++j) {
             int class = j;
             if (dets[i].prob[class]) fprintf(fp, "%d %d %f %f %f %f %f\n", id, j+1, dets[i].prob[class],
                     xmin, ymin, xmax, ymax);

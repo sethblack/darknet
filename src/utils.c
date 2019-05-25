@@ -213,20 +213,20 @@ void pm(int M, int N, float *A)
     printf("\n");
 }
 
-void find_replace(char *str, char *orig, char *rep, char *output)
-{
+void find_replace(char *str, char *orig, char *rep, char *output) {
     char buffer[4096] = {0};
     char *p;
 
     sprintf(buffer, "%s", str);
-    if(!(p = strstr(buffer, orig))){  // Is 'orig' even in 'str'?
+
+    if(!(p = strstr(buffer, orig))) {  // Is 'orig' even in 'str'?
         sprintf(output, "%s", str);
         return;
     }
 
     *p = '\0';
 
-    sprintf(output, "%s%s%s", buffer, rep, p+strlen(orig));
+    sprintf(output, "%s%s%s", buffer, rep, p + strlen(orig));
 }
 
 float sec(clock_t clocks)

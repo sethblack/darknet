@@ -10,10 +10,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-layer make_yolo_layer(int batch, int w, int h, int n, int total, int *mask, int classes)
-{
+layer make_yolo_layer(int batch, int w, int h, int n, int total, int *mask, int classes) {
     int i;
     layer l = {0};
+
     l.type = YOLO;
 
     l.n = n;
@@ -28,25 +28,31 @@ layer make_yolo_layer(int batch, int w, int h, int n, int total, int *mask, int 
     l.classes = classes;
     l.cost = calloc(1, sizeof(float));
     l.biases = calloc(total*2, sizeof(float));
-    if(mask) l.mask = mask;
-    else{
+
+    if(mask) {
+        l.mask = mask;
+    } else {
         l.mask = calloc(n, sizeof(int));
-        for(i = 0; i < n; ++i){
+        for (i = 0; i < n; ++i) {
             l.mask[i] = i;
         }
     }
+
     l.bias_updates = calloc(n*2, sizeof(float));
     l.outputs = h*w*n*(classes + 4 + 1);
+
     l.inputs = l.outputs;
     l.truths = 90*(4 + 1);
     l.delta = calloc(batch*l.outputs, sizeof(float));
     l.output = calloc(batch*l.outputs, sizeof(float));
-    for(i = 0; i < total*2; ++i){
+
+    for(i = 0; i < total * 2; ++i){
         l.biases[i] = .5;
     }
 
     l.forward = forward_yolo_layer;
     l.backward = backward_yolo_layer;
+
 #ifdef GPU
     l.forward_gpu = forward_yolo_layer_gpu;
     l.backward_gpu = backward_yolo_layer_gpu;
@@ -54,7 +60,8 @@ layer make_yolo_layer(int batch, int w, int h, int n, int total, int *mask, int 
     l.delta_gpu = cuda_make_array(l.delta, batch*l.outputs);
 #endif
 
-    fprintf(stderr, "yolo\n");
+    printf("yolo\n");
+
     srand(0);
 
     return l;

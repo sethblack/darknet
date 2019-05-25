@@ -9,8 +9,7 @@
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-list *get_paths(char *filename)
-{
+list *get_paths(char *filename) {
     char *path;
     FILE *file = fopen(filename, "r");
     if(!file) file_error(filename);
@@ -444,17 +443,18 @@ void fill_truth_mask(char *path, int num_boxes, float *truth, int classes, int w
 }
 
 
-void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, int flip, float dx, float dy, float sx, float sy)
-{
+void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, int flip, float dx, float dy, float sx, float sy) {
     char labelpath[4096];
-    find_replace(path, "images", "labels", labelpath);
-    find_replace(labelpath, "JPEGImages", "labels", labelpath);
 
-    find_replace(labelpath, "raw", "labels", labelpath);
+    find_replace(path, "/images/", "/labels/", labelpath);
+    find_replace(labelpath, "/JPEGImages/", "/labels/", labelpath);
+    find_replace(labelpath, "/raw/", "/labels/", labelpath);
+
     find_replace(labelpath, ".jpg", ".txt", labelpath);
     find_replace(labelpath, ".png", ".txt", labelpath);
     find_replace(labelpath, ".JPG", ".txt", labelpath);
     find_replace(labelpath, ".JPEG", ".txt", labelpath);
+
     int count = 0;
     box_label *boxes = read_boxes(labelpath, &count);
     randomize_boxes(boxes, count);
@@ -1033,8 +1033,7 @@ data load_data_swag(char **paths, int n, int classes, float jitter)
     return d;
 }
 
-data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, int classes, float jitter, float hue, float saturation, float exposure)
-{
+data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, int classes, float jitter, float hue, float saturation, float exposure) {
     char **random_paths = get_random_paths(paths, n, m);
     int i;
     data d = {0};
@@ -1077,7 +1076,6 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, in
         int flip = rand()%2;
         if(flip) flip_image(sized);
         d.X.vals[i] = sized.data;
-
 
         fill_truth_detection(random_paths[i], boxes, d.y.vals[i], classes, flip, -dx/w, -dy/h, nw/w, nh/h);
 
@@ -1132,8 +1130,7 @@ void *load_thread(void *ptr)
     return 0;
 }
 
-pthread_t load_data_in_thread(load_args args)
-{
+pthread_t load_data_in_thread(load_args args) {
     pthread_t thread;
     struct load_args *ptr = calloc(1, sizeof(struct load_args));
     *ptr = args;
@@ -1141,8 +1138,7 @@ pthread_t load_data_in_thread(load_args args)
     return thread;
 }
 
-void *load_threads(void *ptr)
-{
+void *load_threads(void *ptr) {
     int i;
     load_args args = *(load_args *)ptr;
     if (args.threads == 0) args.threads = 1;
@@ -1170,15 +1166,13 @@ void *load_threads(void *ptr)
     return 0;
 }
 
-void load_data_blocking(load_args args)
-{
+void load_data_blocking(load_args args) {
     struct load_args *ptr = calloc(1, sizeof(struct load_args));
     *ptr = args;
     load_thread(ptr);
 }
 
-pthread_t load_data(load_args args)
-{
+pthread_t load_data(load_args args) {
     pthread_t thread;
     struct load_args *ptr = calloc(1, sizeof(struct load_args));
     *ptr = args;
